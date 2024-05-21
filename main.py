@@ -23,10 +23,14 @@ MAX_FALL_SPEED = 20
 GROUND_LEVEL = SCREEN_HEIGHT - PLAYER_HEIGHT
 SWORD_DAMAGE = 10
 SWORD_RANGE = 100  # Define SWORD_RANGE here
+ENEMY_WIDTH = 50
+ENEMY_HEIGHT = 50
+ENEMY_COLOR = (0, 0, 255)
+ENEMY_SPEED = 2
 
 # Set up the display
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Platformer Game")
+pygame.display.set_caption("Tosas Platformer Demo")
 
 # Button class
 class Button:
@@ -56,7 +60,7 @@ class Particle(pygame.sprite.Sprite):
         speed = random.uniform(2, 5)
         self.velocity_x = math.cos(angle) * speed
         self.velocity_y = math.sin(angle) * speed
-        self.lifetime = 30
+        self.lifetime = 20
 
     def update(self):
         self.rect.x += self.velocity_x
@@ -124,9 +128,12 @@ class Player(pygame.sprite.Sprite):
                 self.sword_angle = 0
             create_sword_particles(self.rect.centerx, self.rect.centery)
 
+    
+
     def jump(self):
         if self.on_ground or (not self.on_ground and not self.double_jump):
             self.velocity_y = -JUMP_STRENGTH
+            
             if not self.on_ground:
                 self.double_jump = True
             self.on_ground = False
@@ -144,11 +151,43 @@ class Player(pygame.sprite.Sprite):
             self.sword_swinging = True
             self.sword_angle = 0
             
+
+
+            
     def take_damage(self, amount):
         self.health -= amount
         if self.health <= 0:
             pygame.quit()
             sys.exit()
+
+# Enemy class
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.Surface((ENEMY_WIDTH, ENEMY_HEIGHT))
+        self.image.fill(ENEMY_COLOR)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.velocity_x = ENEMY_SPEED
+
+    def update(self):
+        self.rect.x += self.velocity_x
+
+        # Check for screen collision
+        if self.rect.right > SCREEN_WIDTH:
+            self.velocity_x = -ENEMY_SPEED
+        elif self.rect.left < 0:
+            self.velocity_x = ENEMY_SPEED
+
+        # Check for collisions with player
+        if pygame.sprite.collide_rect(self, player):
+            if player.sword_swinging:
+                self.kill()
+            else:
+                player.take_damage(10)
+
+
 
 # Platform class
 class Platform(pygame.sprite.Sprite):
